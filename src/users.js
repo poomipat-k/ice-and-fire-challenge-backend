@@ -60,17 +60,36 @@ export const login = (req, res) => {
     if (result) {
       // create accessToken and refreshToken
       const accessToken = jwtGenerate(user);
+      const refreshToken = jwtRefreshTokenGenerate(user);
 
       return res.status(200).json({
         success: true,
         message: "Login successful",
         accessToken,
+        refreshToken,
       });
     }
     return res.status(401).json({
       success: false,
       message: "Invalid credential",
     });
+  });
+};
+
+export const doRefreshToken = (req, res) => {
+  const user = users.find((u) => u.email === req.user.email);
+
+  if (!user) {
+    return res.sendStatus(401);
+  }
+
+  const accessToken = jwtGenerate(user);
+  const refreshToken = jwtRefreshTokenGenerate(user);
+  user.refresh = refreshToken;
+
+  return res.json({
+    accessToken,
+    refreshToken,
   });
 };
 
@@ -82,4 +101,14 @@ const jwtGenerate = (user) => {
   );
 
   return accessToken;
+};
+
+const jwtRefreshTokenGenerate = (user) => {
+  const refreshToken = jwt.sign(
+    { email: user.email },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "1d", algorithm: "HS256" }
+  );
+
+  return refreshToken;
 };
