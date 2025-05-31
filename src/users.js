@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 import { users } from "./store.js";
 
@@ -57,9 +58,13 @@ export const login = (req, res) => {
       return res.send("hash compare error:", err);
     }
     if (result) {
+      // create accessToken and refreshToken
+      const accessToken = jwtGenerate(user);
+
       return res.status(200).json({
         success: true,
         message: "Login successful",
+        accessToken,
       });
     }
     return res.status(401).json({
@@ -67,4 +72,14 @@ export const login = (req, res) => {
       message: "Invalid credential",
     });
   });
+};
+
+const jwtGenerate = (user) => {
+  const accessToken = jwt.sign(
+    { email: user.email },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "5m", algorithm: "HS256" }
+  );
+
+  return accessToken;
 };
